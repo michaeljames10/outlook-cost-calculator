@@ -80,6 +80,9 @@ const FileUploader = () => {
       wordWrap: 'break-word',
     }
   }}>
+            <Typography variant="h6" gutterBottom>
+         Found {filteredData.length} events  
+        </Typography>
           <Table>
             <TableHead sx={{ backgroundColor: '#f0f0f0' }}>
               <TableRow>
