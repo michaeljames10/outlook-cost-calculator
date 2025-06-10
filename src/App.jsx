@@ -1,12 +1,12 @@
 import './App.css'
-import FileUploader from './fileUploader'
+import MeetingAnalyzer from './fileUploader'
 
 function App() {
 
   return (
     <>
       <div>
-<FileUploader />
+<MeetingAnalyzer />
 </div>
     </>
   )
