@@ -262,6 +262,14 @@ function getFileBox() {
   }
 }
 
+function formatEuro(amount) {
+  return new Intl.NumberFormat('en-IE', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
+
 function getJobTitleOptions() { 
 
 
@@ -324,8 +332,8 @@ console.log(meetingSummary, totalHours, totalCost);
       <Typography variant="h6"  sx={{ color: 'rgb(209,213,219)', fontWeight: 'bold' }}>
 {totalHours.toFixed(1)} hours
       </Typography>
-      <Typography variant="h5"  sx={{ color: 'rgb(59,130,246)', fontWeight: 'bolder', marginTop: '1rem' }}>
-      €{totalCost.toFixed(2)}
+      <Typography variant="h5"  sx={{ color: '#fff', fontWeight: 'bolder', marginTop: '1rem' }}>
+     {formatEuro(totalCost)}
       </Typography>
           </Typography>
 <>
@@ -333,9 +341,9 @@ console.log(meetingSummary, totalHours, totalCost);
         <Table sx={{ backgroundColor: 'transparent' }}>
           <TableHead sx={{ backgroundColor: 'transparent' }}>
             <TableRow>
-              <TableCell  sx={{color: '#fff'}}><strong>Hours</strong></TableCell>
+              <TableCell  sx={{color: '#fff'}}><strong>Hrs</strong></TableCell>
               <TableCell  sx={{color: '#fff'}}><strong>Event</strong></TableCell>
-              <TableCell  sx={{color: '#fff'}}><strong>Times Occurred</strong></TableCell>
+              <TableCell  sx={{color: '#fff'}}><strong>Count</strong></TableCell>
               <TableCell  sx={{color: '#fff'}}><strong>Cost</strong></TableCell>
             </TableRow>
           </TableHead>
@@ -345,10 +353,10 @@ console.log(meetingSummary, totalHours, totalCost);
               .map((row, index) => (
                 <TableRow key={index} sx={{ backgroundColor: 'transparent', color: '#fff' }}>
                   <TableCell sx={{color: '#fff'}}>{row["TotalHours"]}</TableCell>
-                  <TableCell  sx={{color: '#fff'}}>{row["Event"]}</TableCell>
+                  <TableCell  sx={{color: '#fff'}}>{row["Event"].substring(0,20)}</TableCell>
                   <TableCell  sx={{color: '#fff'}}>{row["Count"]}</TableCell>
                   
-                  <TableCell  sx={{ color: '#06b6d4 ', fontWeight: 'bolder', fontSize: '1em'}}>{(row["TotalHours"] * 50).toFixed(2)} €</TableCell>
+                  <TableCell  sx={{ color: '#fff', fontWeight: 'bolder'}}>{     formatEuro(row["TotalHours"] * 50)}</TableCell>
                 </TableRow>
               ))}
           </TableBody>
@@ -390,7 +398,7 @@ console.log(meetingSummary, totalHours, totalCost);
           const prompt = `You're a productivity consultant.\n\nUser uploaded meeting data ${timespan}.\n- Cost/hour: €${costPerHour}\n- Company size: 220\n- this is 1 persons calender with role of ${role}\n- 7 team lead reports\n- Cleaned: removed Lunch, Annual Leave, Cancelled, and empty\n- Grouped similar names\n\nSummary Table:\n| Event Name | Cost (€) |\n|------------|-----------|\n${meetingSummary.map(row => `| ${row.Event} | ${(row.TotalHours * costPerHour).toFixed(2)} € |`).join('\n')}\n\nPlease:\n1. Benchmark this meeting load\n2. Identify any excessive costs\n3. Recommend how to reduce meeting time/cost. compare to industry standards.`;
           sendToOpenAI(prompt); 
         }} sx={{ mt: 2 }}>
-         Analyze with AI
+         Analyze
         </Button>
         </TableContainer>
 
