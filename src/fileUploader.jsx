@@ -329,7 +329,7 @@ console.log(meetingSummary, totalHours, totalCost);
   sx={{
     display: 'grid',
     gridTemplateColumns: {
-      sm: '1fr',        // 1 column on mobile
+      sm: 'repeat(2, 1fr)',        // 1 column on mobile
       md: 'repeat(2, 1fr)' // 3 equal columns on desktop
     },
     gap: 2, // spacing between items (theme spacing)
