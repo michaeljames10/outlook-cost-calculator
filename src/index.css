@@ -18,6 +18,8 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: hsl(231.18deg 62.96% 10.59%);
+  color: #fff;
 }
 
 h1 {
@@ -55,4 +57,24 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+/* Works on Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+/* Works on Firefox */
+html, body {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
 }

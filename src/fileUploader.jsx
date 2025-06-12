@@ -16,13 +16,15 @@ import {
   TableHead,
   TableRow,
   Paper,
-  TablePagination,
   Button,
     Select,
   MenuItem,
+  TablePagination,
   FormControl,
   InputLabel
 } from '@mui/material';
+import Fab from '@mui/material/Fab';
+import NavigationIcon from '@mui/icons-material/Navigation';
 
 const HOURLY_RATES = {
   'Software Engineer': 70,
@@ -39,7 +41,7 @@ const MeetingAnalyzer = () => {
   const [summaryPresentation, setSummaryPresentation] = useState('file');
    const [role, setRole] = useState('Software Engineer');
   const costPerHour = HOURLY_RATES[role];
-    const [page, setPage] = useState(0);
+      const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const handleChangePage = (event, newPage) => {
@@ -50,6 +52,7 @@ const MeetingAnalyzer = () => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+
 
   const sendToOpenAI = async (prompt) => {
     setLoading(true);
@@ -120,10 +123,10 @@ const MeetingAnalyzer = () => {
   });
 
   const processData = (filtered) => {
-    const events = filtered.map(row => row.Event);
-    const fuse = new Fuse(events, { includeScore: true, threshold: 0.2 });
-    const groups = {};
-
+  if (!filtered || filtered.length === 0) {
+      console.error("No valid data to process.");
+      return;
+    }
 console.log("Processing data...", meetingSummary);
 
 const fullTable =    `\nFull Cost Breakdown:\n| Event | Hours | Count | Cost (€) |\n${meetingSummary.map(row => `| ${row.Event} | ${row.TotalHours} | ${row.Count} | ${(row.TotalHours * costPerHour).toFixed(2)} € |`).join('\n')}`
@@ -239,15 +242,15 @@ function getFileBox() {
           p: 4,
           textAlign: 'center',
           cursor: 'pointer',
-          backgroundColor: '#f9f9f9',
+          backgroundColor: 'transparent',
           mb: 4
         }}
       >
         <input {...getInputProps()} />
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h6" gutterBottom  sx={{ color: '#fff' }}>
           Drag and drop a CSV file here
         </Typography>
-        <Typography variant="body2" color="textSecondary">
+        <Typography variant="body2" color="primary"  sx={{ color: '#fff' }}>
           or
         </Typography>
         <Button variant="contained" onClick={open} sx={{ mt: 2 }}>
@@ -304,64 +307,84 @@ console.log(meetingSummary, totalHours, totalCost);
 
 
       {meetingSummary.length > 0 && summaryPresentation === "table" && (
-        <TableContainer component={Paper} sx={{ overflowX: 'auto', maxWidth: '100%', width: '100%' }}>
+        <TableContainer component={Paper} sx={{ overflowX: 'auto', maxWidth: '100%', width: '100%' , backgroundColor: 'transparent', textAlign: 'left' }}>
           <Typography variant="h6" gutterBottom>
-      <Paper elevation={0} style={{ padding: '1rem', marginTop: '1rem', textAlign: 'left' }}>
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="h2"  gutterBottom  sx={{ color: '#fff ', fontWeight: 'bold' }}>
         Meeting Summary
       </Typography>
-      <Typography variant="body1">
-        🗓 <strong>Job title:</strong> {role}
+      <Typography variant="h6"  sx={{ color: '#fff', fontWeight: 'bold' }}>
+{role}
       </Typography>
-            <Typography variant="body1">
-        🗓 <strong>Per hour cost:</strong> {costPerHour}
+            <Typography variant="body1"   sx={{ color: 'rgb(209,213,219)' }}>
+   {costPerHour} per hour
       </Typography>
-      <Typography variant="body1">
-        🗓 <strong>Timespan:</strong> {timespan.label}
+      <Typography variant="body1"   sx={{ color: 'rgb(209,213,219)' }}>
+{timespan.label}
       </Typography>
-      <Typography variant="body1">
-        ⏱ <strong>Total Hours:</strong> {totalHours.toFixed(1)}
+      <Typography variant="h6"  sx={{ color: 'rgb(209,213,219)', fontWeight: 'bold' }}>
+{totalHours.toFixed(1)} hours
       </Typography>
-      <Typography variant="body1">
-        💶 <strong>Total Cost:</strong> €{totalCost.toFixed(2)}
+      <Typography variant="h5"  sx={{ color: 'rgb(59,130,246)', fontWeight: 'bolder', marginTop: '1rem' }}>
+      €{totalCost.toFixed(2)}
       </Typography>
-    </Paper>
           </Typography>
 <>
-      <TableContainer>
-        <Table>
-          <TableHead sx={{ backgroundColor: '#f0f0f0' }}>
+      <TableContainer sx={{ backgroundColor: 'transparent' }}>
+        <Table sx={{ backgroundColor: 'transparent' }}>
+          <TableHead sx={{ backgroundColor: 'transparent' }}>
             <TableRow>
-              <TableCell><strong>Hours</strong></TableCell>
-              <TableCell><strong>Event</strong></TableCell>
-              <TableCell><strong>Times Occurred</strong></TableCell>
-              <TableCell><strong>Cost</strong></TableCell>
+              <TableCell  sx={{color: '#fff'}}><strong>Hours</strong></TableCell>
+              <TableCell  sx={{color: '#fff'}}><strong>Event</strong></TableCell>
+              <TableCell  sx={{color: '#fff'}}><strong>Times Occurred</strong></TableCell>
+              <TableCell  sx={{color: '#fff'}}><strong>Cost</strong></TableCell>
             </TableRow>
           </TableHead>
-          <TableBody>
+          <TableBody sx={{ backgroundColor: 'transparent' }}>
             {meetingSummary
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                          .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((row, index) => (
-                <TableRow key={index}>
-                  <TableCell>{row["TotalHours"]}</TableCell>
-                  <TableCell>{row["Event"]}</TableCell>
-                  <TableCell>{row["Count"]}</TableCell>
-                  <TableCell>{(row["TotalHours"] * 50).toFixed(2)} €</TableCell>
+                <TableRow key={index} sx={{ backgroundColor: 'transparent', color: '#fff' }}>
+                  <TableCell sx={{color: '#fff'}}>{row["TotalHours"]}</TableCell>
+                  <TableCell  sx={{color: '#fff'}}>{row["Event"]}</TableCell>
+                  <TableCell  sx={{color: '#fff'}}>{row["Count"]}</TableCell>
+                  
+                  <TableCell  sx={{ color: '#06b6d4 ', fontWeight: 'bolder', fontSize: '1em'}}>{(row["TotalHours"] * 50).toFixed(2)} €</TableCell>
                 </TableRow>
               ))}
           </TableBody>
         </Table>
       </TableContainer>
+<TablePagination
+  rowsPerPageOptions={[5, 10, 25]}
+  component="div"
+  count={meetingSummary.length}
+  rowsPerPage={rowsPerPage}
+  page={page}
+  onPageChange={handleChangePage}
+  onRowsPerPageChange={handleChangeRowsPerPage}
+  sx={{
+    color: '#fff', // general text
+    '& .MuiTablePagination-toolbar': {
+      color: '#fff',
+    },
+    '& .MuiTablePagination-selectLabel': {
+      color: '#fff',
+    },
+    '& .MuiTablePagination-input': {
+      color: '#fff',
+    },
+    '& .MuiSelect-icon': {
+      color: '#fff',
+    },
+    '& .MuiSvgIcon-root': {
+      color: '#fff',
+    },
+    '& .MuiTablePagination-actions button': {
+      color: '#fff',
+    },
+  }}
+/>
 
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
-        component="div"
-        count={meetingSummary.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
 </>
         <Button variant="contained" onClick={()=>{
           const prompt = `You're a productivity consultant.\n\nUser uploaded meeting data ${timespan}.\n- Cost/hour: €${costPerHour}\n- Company size: 220\n- this is 1 persons calender with role of ${role}\n- 7 team lead reports\n- Cleaned: removed Lunch, Annual Leave, Cancelled, and empty\n- Grouped similar names\n\nSummary Table:\n| Event Name | Cost (€) |\n|------------|-----------|\n${meetingSummary.map(row => `| ${row.Event} | ${(row.TotalHours * costPerHour).toFixed(2)} € |`).join('\n')}\n\nPlease:\n1. Benchmark this meeting load\n2. Identify any excessive costs\n3. Recommend how to reduce meeting time/cost. compare to industry standards.`;
@@ -382,6 +405,7 @@ console.log(meetingSummary, totalHours, totalCost);
           <Typography variant="body2" style={{ whiteSpace: 'pre-line' }}>{aiResponse}</Typography>
         </Box>
       )}
+
 </>
 
   );
