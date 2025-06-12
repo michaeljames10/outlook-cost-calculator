@@ -21,10 +21,12 @@ import {
   MenuItem,
   TablePagination,
   FormControl,
-  InputLabel
+  InputLabel,
+  Grid,
 } from '@mui/material';
-import Fab from '@mui/material/Fab';
-import NavigationIcon from '@mui/icons-material/Navigation';
+import SendIcon from '@mui/icons-material/Send';
+
+import { format, formatDistance, formatDistanceToNow } from 'date-fns';
 
 const HOURLY_RATES = {
   'Software Engineer': 70,
@@ -150,6 +152,7 @@ function summarizeMeetings(eventsArray) {
     const [day, month, yearAndTime] = dateStr.split('/');
     const [year, time] = yearAndTime.split(' ');
     const [hour, minute, second] = time.split(':').map(Number);
+    
     return new Date(Number(year), Number(month) - 1, Number(day), hour, minute, second);
   }
 
@@ -159,6 +162,9 @@ function summarizeMeetings(eventsArray) {
     const event = meeting.Event;
     const start = parseDate(meeting["Start Time"]);
     const end = parseDate(meeting["End Time"]);
+
+
+
     const durationHours = (end - start) / (1000 * 60 * 60);
 
     if (!summaryMap[event]) {
@@ -213,7 +219,9 @@ function getEventTimespan(eventsArray) {
   return {
     firstEvent: minDate,
     lastEvent: maxDate,
-    label: formatTimespan(minDate, maxDate)
+    label: `From ${format(minDate, 'd MMM yyyy')} to ${format(maxDate, 'd MMM yyyy')}`,
+    distanceLabel: `From ${formatDistanceToNow(minDate, { addSuffix: true })} to ${formatDistanceToNow(maxDate, { addSuffix: true })}`,
+    rangeGap: formatDistance(minDate, maxDate)
   };
 }
 
@@ -315,29 +323,65 @@ console.log(meetingSummary, totalHours, totalCost);
 
 
       {meetingSummary.length > 0 && summaryPresentation === "table" && (
-        <TableContainer component={Paper} sx={{ overflowX: 'auto', maxWidth: '100%', width: '100%' , backgroundColor: 'transparent', textAlign: 'left' }}>
-          <Typography variant="h6" gutterBottom>
-      <Typography variant="h2"  gutterBottom  sx={{ color: '#fff ', fontWeight: 'bold' }}>
+        <>
+      
+<Box
+  sx={{
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: '1fr',        // 1 column on mobile
+      md: 'repeat(2, 1fr)' // 3 equal columns on desktop
+    },
+    gap: 2, // spacing between items (theme spacing)
+    my: 2,
+    marginBottom: '3rem',
+  }}
+>
+  <Paper sx={{ p: 2, backgroundColor: 'rgb(21,28,50)', color: '#fff', borderRadius: 2 }}>
+    <Typography variant="h4" sx={{ fontWeight: 'bolder' , color: 'rgb(59 130 246)' }}>
+      {formatEuro(totalCost)}
+    </Typography>
+   <Typography variant="subtitle1" gutterBottom sx={{  color: 'rgb(209 213 219)' , fontWeight: 'bolder'}}>
+      Total Cost
+    </Typography>
+
+  </Paper>
+
+  <Paper sx={{ p: 2, backgroundColor: 'rgb(21,28,50)', color: '#fff', borderRadius: 2 }}>
+    <Typography variant="h4" sx={{ fontWeight: 'bolder' , color: 'rgb(59 130 246)' }}>
+      {totalHours.toFixed(1)} hours
+    </Typography>
+    <Typography variant="subtitle1" gutterBottom sx={{  color: 'rgb(209 213 219)', fontWeight: 'bolder' }}>
+      Total Hours
+    </Typography>
+
+  </Paper>
+{/* 
+  <Paper sx={{ p: 2, backgroundColor: 'rgb(21,28,50)', color: '#fff', borderRadius: 2 }}>
+    <Typography variant="h4" sx={{ fontWeight: 'bolder' , color: 'rgb(59 130 246)' }}>
+      {timespan?.distanceLabel || 'N/A'}
+    </Typography>
+   <Typography variant="h6" gutterBottom sx={{  color: 'rgb(209 213 219)' }}>
+      Timespan
+    </Typography>
+
+  </Paper> */}
+</Box>
+      <Typography variant="h5"  gutterBottom  sx={{ color: '#fff ', fontWeight: 'bold', textAlign:'left' }}>
         Meeting Summary
       </Typography>
-      <Typography variant="h6"  sx={{ color: '#fff', fontWeight: 'bold' }}>
-{role}
-      </Typography>
-            <Typography variant="body1"   sx={{ color: 'rgb(209,213,219)' }}>
-   {costPerHour} per hour
-      </Typography>
-      <Typography variant="body1"   sx={{ color: 'rgb(209,213,219)' }}>
-{timespan.label}
-      </Typography>
-      <Typography variant="h6"  sx={{ color: 'rgb(209,213,219)', fontWeight: 'bold' }}>
-{totalHours.toFixed(1)} hours
-      </Typography>
-      <Typography variant="h5"  sx={{ color: '#fff', fontWeight: 'bolder', marginTop: '1rem' }}>
-     {formatEuro(totalCost)}
-      </Typography>
-          </Typography>
+       <Typography variant="body2" sx={{ fontWeight: 'bolder' ,  color: 'rgb(209 213 219)', textAlign:'left' }}>
+      {timespan?.distanceLabel || 'N/A'}
+    </Typography>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <Button endIcon={<SendIcon />} variant="contained" onClick={()=>{
+          const prompt = `You're a productivity consultant.\n\nUser uploaded meeting data ${timespan}.\n- Cost/hour: €${costPerHour}\n- Company size: 220\n- this is 1 persons calender with role of ${role}\n- 7 team lead reports\n- Cleaned: removed Lunch, Annual Leave, Cancelled, and empty\n- Grouped similar names\n\nSummary Table:\n| Event Name | Cost (€) |\n|------------|-----------|\n${meetingSummary.map(row => `| ${row.Event} | ${(row.TotalHours * costPerHour).toFixed(2)} € |`).join('\n')}\n\nPlease:\n1. Benchmark this meeting load\n2. Identify any excessive costs\n3. Recommend how to reduce meeting time/cost. compare to industry standards.`;
+          sendToOpenAI(prompt); 
+        }} sx={{ mt: 2 }}>
+         Smart Analysis
+        </Button></div>
 <>
-      <TableContainer sx={{ backgroundColor: 'transparent' }}>
+      <TableContainer sx={{ backgroundColor: 'rgb(31 41 55 / 0.5)', borderRadius: 2, marginBottom: '1rem', marginTop: '2rem', padding :  2 }} component={Paper }>
         <Table sx={{ backgroundColor: 'transparent' }}>
           <TableHead sx={{ backgroundColor: 'transparent' }}>
             <TableRow>
@@ -356,7 +400,7 @@ console.log(meetingSummary, totalHours, totalCost);
                   <TableCell  sx={{color: '#fff'}}>{row["Event"].substring(0,20)}</TableCell>
                   <TableCell  sx={{color: '#fff'}}>{row["Count"]}</TableCell>
                   
-                  <TableCell  sx={{ color: '#fff', fontWeight: 'bolder'}}>{     formatEuro(row["TotalHours"] * 50)}</TableCell>
+                  <TableCell  sx={{ color: 'rgb(6 182 212)', fontWeight: 'bolder'}}>{     formatEuro(row["TotalHours"] * 50)}</TableCell>
                 </TableRow>
               ))}
           </TableBody>
@@ -394,13 +438,8 @@ console.log(meetingSummary, totalHours, totalCost);
 />
 
 </>
-        <Button variant="contained" onClick={()=>{
-          const prompt = `You're a productivity consultant.\n\nUser uploaded meeting data ${timespan}.\n- Cost/hour: €${costPerHour}\n- Company size: 220\n- this is 1 persons calender with role of ${role}\n- 7 team lead reports\n- Cleaned: removed Lunch, Annual Leave, Cancelled, and empty\n- Grouped similar names\n\nSummary Table:\n| Event Name | Cost (€) |\n|------------|-----------|\n${meetingSummary.map(row => `| ${row.Event} | ${(row.TotalHours * costPerHour).toFixed(2)} € |`).join('\n')}\n\nPlease:\n1. Benchmark this meeting load\n2. Identify any excessive costs\n3. Recommend how to reduce meeting time/cost. compare to industry standards.`;
-          sendToOpenAI(prompt); 
-        }} sx={{ mt: 2 }}>
-         Analyze
-        </Button>
-        </TableContainer>
+
+        </>
 
 
 

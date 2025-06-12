@@ -13,11 +13,6 @@ a:hover {
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
   background-color: hsl(231.18deg 62.96% 10.59%);
   color: #fff;
 }
