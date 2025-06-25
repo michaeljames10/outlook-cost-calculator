@@ -1,25 +1,17 @@
 // React + OpenAI (no backend): Meeting Analyzer Tool
 // npm install openai papaparse fuse.js react-dropzone @mui/material
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import Papa from "papaparse";
-import Fuse from "fuse.js";
 import CircularProgress from "@mui/material/CircularProgress";
 import {
   Box,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
   Button,
   Select,
   MenuItem,
-  TablePagination,
   FormControl,
   InputLabel,
   Grid,
@@ -44,6 +36,8 @@ const MeetingAnalyzer = () => {
   const costPerHour = HOURLY_RATES[role];
   const [page] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(6);
+  const [topAttendees, setTopAttendees] = useState([]);
+  const [topOneOnOne, setTopOneOnOne] = useState([]);
 
   const sendToOpenAI = async (prompt) => {
     setLoading(true);
@@ -77,6 +71,17 @@ const MeetingAnalyzer = () => {
     }
   };
 
+  const isValidEvent = (eventName = "") => {
+    const lower = eventName.toLowerCase();
+    return (
+      lower &&
+      !lower.includes("lunch") &&
+      !lower.includes("annual leave") &&
+      !lower.includes("canceled") &&
+      !lower.includes("cancelled") // just in case
+    );
+  };
+
   const onDrop = (acceptedFiles) => {
     if (acceptedFiles.length === 0) {
       return;
@@ -92,19 +97,13 @@ const MeetingAnalyzer = () => {
 
         const filtered = data
           .map((row) => ({
+            "Start Date": row["Start Date"] || "",
             Event: row["Subject"] || "",
             "Start Time": `${row["Start Date"]} ${row["Start Time"]}`.trim(),
             "End Time": `${row["End Date"]} ${row["End Time"]}`.trim(),
+            "Required Attendees": `${row["Required Attendees"]}`.trim() || "",
           }))
-          .filter((row) => {
-            const event = row.Event.toLowerCase().trim();
-            return (
-              event &&
-              !event.includes("lunch") &&
-              !event.includes("annual leave") &&
-              !event.includes("cancelled")
-            );
-          });
+          .filter((row) => isValidEvent(row.Event));
 
         setFilteredData(filtered);
         processData(filtered);
@@ -126,20 +125,94 @@ const MeetingAnalyzer = () => {
       console.error("No valid data to process.");
       return;
     }
-    console.log("Processing data...", meetingSummary);
 
-    const fullTable = `\nFull Cost Breakdown:\n| Event | Hours | Count | Cost (€) |\n${meetingSummary
-      .map(
-        (row) =>
-          `| ${row.Event} | ${row.TotalHours} | ${row.Count} | ${(
-            row.TotalHours * costPerHour
-          ).toFixed(2)} € |`
-      )
+    if (!filtered || filtered.length === 0) return;
+
+    // Helper to parse the date
+    const parseDate = (dateStr) => {
+      const [day, month, yearAndTime] = dateStr.split("/");
+      const [year, time] = yearAndTime.split(" ");
+      const [hour, minute, second] = time.split(":").map(Number);
+      return new Date(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        hour,
+        minute,
+        second
+      );
+    };
+
+    // Filter out future events
+    const today = new Date();
+    filtered = filtered.filter((row) => {
+      const startDate = parseDate(row["Start Time"]);
+      return startDate <= today;
+    });
+
+    // Count top attendees across all meetings
+    const attendeeCount = {};
+
+    for (const row of filtered) {
+      const attendees = row["Required Attendees"]
+        ?.split(";")
+        .map((name) => name.trim())
+        .filter(Boolean);
+
+      attendees.forEach((person) => {
+        attendeeCount[person] = (attendeeCount[person] || 0) + 1;
+      });
+    }
+
+    const top = Object.entries(attendeeCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([name, count]) => ({ name, count }));
+
+    setTopAttendees(top);
+
+    // Most frequent 1:1 person logic
+    const oneOnOneCount = {};
+    for (const row of filtered) {
+      const attendees = row["Required Attendees"]
+        ?.split(";")
+        .map((name) => name.trim())
+        .filter(Boolean);
+
+      if (attendees.length === 2) {
+        // Find the other person (excluding yourself)
+        attendees.forEach((person) => {
+          if (
+            !person.toLowerCase().includes("michael") &&
+            !person.toLowerCase().includes("mj")
+          ) {
+            oneOnOneCount[person] = (oneOnOneCount[person] || 0) + 1;
+          }
+        });
+      }
+    }
+
+    const topOneOnOne = Object.entries(oneOnOneCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 1)
+      .map(([name, count]) => ({ name, count }));
+
+    setTopOneOnOne(topOneOnOne);
+
+    const fullTable = `\nFull Cost Breakdown:\n| Event | Hours | Count | Cost (€) | Required Attendees |\n${meetingSummary
+      .map((row) => {
+        // Find the first matching event in filtered to get Required Attendees
+        const attendee =
+          filtered.find((item) => item.Event === row.Event)?.[
+            "Required Attendees"
+          ] || "";
+        return `| ${row.Event} | ${row.TotalHours} | ${row.Count} | ${(
+          row.TotalHours * costPerHour
+        ).toFixed(2)} € | ${attendee} |`;
+      })
       .join("\n")}`;
 
     const prompt = `\n${fullTable}\n\nPlease analyze...`;
-    //const prompt = `You're a productivity consultant.\n\nUser uploaded meeting data (May 2025).\n- Cost/hour: €50\n- Company size: 220\n- 7 team lead reports\n- Cleaned: removed Lunch, Annual Leave, Cancelled, and empty\n- Grouped similar names\n\nSummary Table:\n| Event Name | Cost (€) |\n|------------|-----------|\n${meetingSummary}\n\nPlease:\n1. Benchmark this meeting load\n2. Identify any excessive costs\n3. Recommend how to reduce meeting time/cost.`;
-    // console.log(prompt);
 
     console.log("Prompt sent to OpenAI:", prompt);
   };
@@ -165,9 +238,9 @@ const MeetingAnalyzer = () => {
     }
 
     const summaryMap = {};
-
     for (const meeting of eventsArray) {
       const event = meeting.Event;
+      const requiredAttendees = meeting["Required Attendees"] || "";
       const start = parseDate(meeting["Start Time"]);
       const end = parseDate(meeting["End Time"]);
 
@@ -177,11 +250,13 @@ const MeetingAnalyzer = () => {
         summaryMap[event] = {
           count: 0,
           totalHours: 0,
+          requiredAttendees: requiredAttendees,
         };
       }
 
       summaryMap[event].count += 1;
       summaryMap[event].totalHours += durationHours;
+      summaryMap[event].requiredAttendees = requiredAttendees;
     }
 
     // Convert to sorted array
@@ -189,7 +264,8 @@ const MeetingAnalyzer = () => {
       .map(([event, data]) => ({
         Event: event,
         Count: data.count,
-        TotalHours: Number(data.totalHours.toFixed(1)), // round to 1 decimal
+        TotalHours: Number(data.totalHours.toFixed(1)),
+        RequiredAttendees: data.requiredAttendees,
       }))
       .sort((a, b) => b.Count - a.Count); // sort by count descending
 
@@ -215,14 +291,22 @@ const MeetingAnalyzer = () => {
       );
     }
 
-    if (eventsArray.length === 0) {
+    const today = new Date();
+
+    // Filter out future events
+    const pastEvents = eventsArray.filter((event) => {
+      const date = parseDate(event["Start Time"]);
+      return date <= today;
+    });
+
+    if (pastEvents.length === 0) {
       return null;
     }
 
-    let minDate = parseDate(eventsArray[0]["Start Time"]);
+    let minDate = parseDate(pastEvents[0]["Start Time"]);
     let maxDate = minDate;
 
-    for (const event of eventsArray) {
+    for (const event of pastEvents) {
       const date = parseDate(event["Start Time"]);
       if (date < minDate) minDate = date;
       if (date > maxDate) maxDate = date;
@@ -370,7 +454,7 @@ const MeetingAnalyzer = () => {
     return <CircularProgress color="secondary" size="5rem" />;
   }
 
-  console.log(meetingSummary, totalHours, totalCost);
+  console.log(meetingSummary, "xxxxxxxxxx");
   return (
     <>
       {getJobTitleOptions()}
@@ -436,6 +520,50 @@ const MeetingAnalyzer = () => {
                 Total Hours
               </Typography>
             </Paper>
+            {topAttendees.length > 0 && (
+              <Box
+                sx={{
+                  mt: 4,
+                  backgroundColor: "rgb(21,28,50)",
+                  color: "#fff",
+                  p: 2,
+                  borderRadius: 2,
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{ color: "#60a5fa", fontWeight: "bold", mb: 1 }}
+                >
+                  Top 3 Meeting Attendees
+                </Typography>
+                {topAttendees.map(({ name, count }) => (
+                  <Typography variant="body2">
+                    {name} — {count} meetings
+                  </Typography>
+                ))}
+              </Box>
+            )}
+            {topOneOnOne.length > 0 && (
+              <Box
+                sx={{
+                  mt: 4,
+                  backgroundColor: "rgb(21,28,50)",
+                  color: "#fff",
+                  p: 2,
+                  borderRadius: 2,
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{ color: "#60a5fa", fontWeight: "bold", mb: 1 }}
+                >
+                  Most Frequent 1:1 Meeting
+                </Typography>
+                <Typography variant="body2">
+                  {topOneOnOne[0].name} — {topOneOnOne[0].count} times
+                </Typography>
+              </Box>
+            )}
             {/* 
   <Paper sx={{ p: 2, backgroundColor: 'rgb(21,28,50)', color: '#fff', borderRadius: 2 }}>
     <Typography variant="h4" sx={{ fontWeight: 'bolder' , color: 'rgb(59 130 246)' }}>
