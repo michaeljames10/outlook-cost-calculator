@@ -166,7 +166,7 @@ const MeetingAnalyzer = () => {
 
     const top = Object.entries(attendeeCount)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
+      .slice(1, 4)
       .map(([name, count]) => ({ name, count }));
 
     setTopAttendees(top);
