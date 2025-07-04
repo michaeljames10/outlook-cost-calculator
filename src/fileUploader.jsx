@@ -37,7 +37,6 @@ const MeetingAnalyzer = () => {
   const [page] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(6);
   const [topAttendees, setTopAttendees] = useState([]);
-  const [topOneOnOne, setTopOneOnOne] = useState([]);
 
   const sendToOpenAI = async (prompt) => {
     setLoading(true);
@@ -143,11 +142,14 @@ const MeetingAnalyzer = () => {
       );
     };
 
-    // Filter out future events
+    // Filter for only past events from the last 30 days
     const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+
     filtered = filtered.filter((row) => {
       const startDate = parseDate(row["Start Time"]);
-      return startDate <= today;
+      return startDate >= thirtyDaysAgo && startDate <= today;
     });
 
     // Count top attendees across all meetings
@@ -191,13 +193,6 @@ const MeetingAnalyzer = () => {
         });
       }
     }
-
-    const topOneOnOne = Object.entries(oneOnOneCount)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 1)
-      .map(([name, count]) => ({ name, count }));
-
-    setTopOneOnOne(topOneOnOne);
 
     const fullTable = `\nFull Cost Breakdown:\n| Event | Hours | Count | Cost (€) | Required Attendees |\n${meetingSummary
       .map((row) => {
@@ -368,7 +363,7 @@ const MeetingAnalyzer = () => {
     return new Intl.NumberFormat("en-IE", {
       style: "currency",
       currency: "EUR",
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 0,
     }).format(amount);
   }
 
@@ -510,7 +505,7 @@ const MeetingAnalyzer = () => {
                 variant="h4"
                 sx={{ fontWeight: "bolder", color: "rgb(59 130 246)" }}
               >
-                {totalHours.toFixed(1)} hours
+                {totalHours.toFixed(0)} hours
               </Typography>
               <Typography
                 variant="subtitle1"
@@ -543,27 +538,7 @@ const MeetingAnalyzer = () => {
                 ))}
               </Box>
             )}
-            {topOneOnOne.length > 0 && (
-              <Box
-                sx={{
-                  mt: 4,
-                  backgroundColor: "rgb(21,28,50)",
-                  color: "#fff",
-                  p: 2,
-                  borderRadius: 2,
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{ color: "#60a5fa", fontWeight: "bold", mb: 1 }}
-                >
-                  Most Frequent 1:1 Meeting
-                </Typography>
-                <Typography variant="body2">
-                  {topOneOnOne[0].name} — {topOneOnOne[0].count} times
-                </Typography>
-              </Box>
-            )}
+
             {/* 
   <Paper sx={{ p: 2, backgroundColor: 'rgb(21,28,50)', color: '#fff', borderRadius: 2 }}>
     <Typography variant="h4" sx={{ fontWeight: 'bolder' , color: 'rgb(59 130 246)' }}>
@@ -590,7 +565,7 @@ const MeetingAnalyzer = () => {
               textAlign: "left",
             }}
           >
-            {timespan?.distanceLabel || "N/A"}
+            Last 30 days
           </Typography>
           <div
             style={{
