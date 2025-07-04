@@ -19,12 +19,57 @@ import {
 import SendIcon from "@mui/icons-material/Send";
 
 import { format, formatDistance, formatDistanceToNow } from "date-fns";
-
 const HOURLY_RATES = {
   "Software Engineer": 70,
-  "Product Manager": 40,
-  QA: 30,
-  DevOps: 60,
+  "Frontend Developer": 65,
+  "Backend Developer": 65,
+  "Full Stack Developer": 68,
+  "Mobile App Developer": 60,
+  "iOS Developer": 60,
+  "Android Developer": 60,
+  "Web Developer": 55,
+  "DevOps Engineer": 65,
+  "Site Reliability Engineer": 70,
+  "Cloud Engineer": 68,
+  "Cloud Architect": 75,
+  "Data Engineer": 65,
+  "Data Analyst": 50,
+  "Data Scientist": 70,
+  "Machine Learning Engineer": 72,
+  "AI Engineer": 75,
+  "Security Engineer": 68,
+  "Cybersecurity Specialist": 70,
+  "Penetration Tester": 65,
+  "IT Support Specialist": 40,
+  "Helpdesk Technician": 35,
+  "Network Engineer": 55,
+  "Network Administrator": 50,
+  "Systems Administrator": 50,
+  "Infrastructure Engineer": 58,
+  "QA Engineer": 50,
+  "Automation Test Engineer": 55,
+  "Performance Test Engineer": 53,
+  "Test Lead": 58,
+  "Technical Support Engineer": 42,
+  "Database Administrator": 55,
+  "ETL Developer": 54,
+  "Product Manager": 65,
+  "Technical Product Manager": 68,
+  "Scrum Master": 60,
+  "Agile Coach": 65,
+  "Project Manager (IT)": 60,
+  "Business Analyst (IT)": 52,
+  "UI Designer": 50,
+  "UX Designer": 52,
+  "UX Researcher": 50,
+  "Graphic Designer (Digital)": 45,
+  "Technical Writer": 45,
+  "Solutions Architect": 72,
+  "Enterprise Architect": 78,
+  "Tech Lead": 75,
+  "Engineering Manager": 80,
+  CTO: 100,
+  "IT Director": 90,
 };
 
 const MeetingAnalyzer = () => {
@@ -360,11 +405,12 @@ const MeetingAnalyzer = () => {
   }
 
   function formatEuro(amount) {
+    const a = Math.round(amount);
     return new Intl.NumberFormat("en-IE", {
       style: "currency",
       currency: "EUR",
       minimumFractionDigits: 0,
-    }).format(amount);
+    }).format(a);
   }
 
   function getJobTitleOptions() {
